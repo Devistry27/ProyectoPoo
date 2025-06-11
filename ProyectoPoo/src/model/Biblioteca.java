@@ -63,7 +63,8 @@ public class Biblioteca {
 
                 if (p.estaAtrasado()) {
                     int dias = p.diasDeRetraso();
-                    Multa multa = new Multa(p.getUsuario(), p.getLibro(), dias);
+                    double monto = p.getUsuario().calcularMulta(dias);
+                    Multa multa = new Multa(p.getUsuario(), p.getLibro(),dias, monto);
                     multaDAO.save(multa);
                 }
 

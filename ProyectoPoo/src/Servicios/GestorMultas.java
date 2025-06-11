@@ -1,47 +1,70 @@
 package Servicios;
 
-import model.Usuario;
+import DAO.MultaDao;
+import model.Multa;
 import model.Prestamo;
+import model.Usuario;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class GestorMultas {
 
-    private Map<Usuario, List<String>> multasPorUsuario = new HashMap<>();
+    private final MultaDao multaDao;
 
-    public void verificarMulta(Prestamo prestamo) {
+    public GestorMultas(MultaDao multaDao) {
+        this.multaDao = multaDao;
+    }
+
+    public void verificar(Prestamo prestamo) {
         LocalDate fechaDevolucion = prestamo.getFechaDevolucion();
         LocalDate hoy = LocalDate.now();
         Usuario usuario = prestamo.getUsuario();
 
         if (fechaDevolucion != null && hoy.isAfter(fechaDevolucion)) {
             int diasRetraso = (int) (hoy.toEpochDay() - fechaDevolucion.toEpochDay());
-            double multa = usuario.calcularMulta(diasRetraso);
-            registrarMulta(usuario, "Retraso de " + diasRetraso + " días. Multa: $" + multa);
+            double monto = usuario.calcularMulta(diasRetraso);
+            Multa multa = new Multa(usuario, prestamo.getLibro(), diasRetraso, monto);
+            multaDao.save(multa);
         }
     }
 
-    public void registrarMulta(Usuario usuario, String detalle) {
-        multasPorUsuario.computeIfAbsent(usuario, k -> new ArrayList<>()).add(detalle);
+    public List<Multa> obtenerMultas(Usuario usuario) {
+        return multaDao.findByUsuario(usuario);
     }
 
-    public List<String> obtenerMultas(Usuario usuario) {
-        return multasPorUsuario.getOrDefault(usuario, new ArrayList<>());
-    }
-
-    public void mostrarMultas(Usuario usuario) {
-        List<String> multas = obtenerMultas(usuario);
+    public void mostrarMultasConsola(Usuario usuario) {
+        List<Multa> multas = obtenerMultas(usuario);
         if (multas.isEmpty()) {
             System.out.println("No hay multas registradas para el usuario.");
         } else {
             System.out.println("Multas para " + usuario.getNombre() + ":");
-            for (String multa : multas) {
+            for (Multa multa : multas) {
                 System.out.println("- " + multa);
             }
+        }
+    }
+
+    public boolean pagarMulta(String idMulta) {
+        Multa multa = multaDao.findAll().stream()
+                .filter(m -> m.getId().equals(idMulta))
+                .findFirst()
+                .orElse(null);
+
+        if (multa != null && !multa.isPagada()) {
+            multa.setPagada(true);
+            multaDao.update(multa);
+            return true;
+        }
+        return false;
+    }
+
+    public void registrarMultaManual(Prestamo prestamo, int diasRetraso) {
+        if (diasRetraso > 0) {
+            Usuario usuario = prestamo.getUsuario();
+            double monto = usuario.calcularMulta(diasRetraso);
+            Multa multa = new Multa(usuario, prestamo.getLibro(), diasRetraso, monto);
+            multaDao.save(multa);
         }
     }
 }

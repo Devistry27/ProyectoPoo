@@ -4,6 +4,7 @@ import model.*;
 import View.VistaPrincipal;
 import DAO.MultaDao;
 import DAO.PrestamoDao;
+import Servicios.GestorMultas;
 
 import java.util.List;
 
@@ -14,6 +15,7 @@ public class ControladorBiblioteca {
     private final MultaDao multaDao = new MultaDao();
     private final PrestamoDao prestamoDao = new PrestamoDao();
     private Usuario usuarioActual;
+    private final GestorMultas gestorMultas = new GestorMultas(multaDao);
 
     public ControladorBiblioteca(VistaPrincipal vista) {
         this.vista = vista;
@@ -112,31 +114,37 @@ public class ControladorBiblioteca {
         }
     }
 
-   private void devolverLibro() {
-    String isbn = vista.getISBNLibro();
-    Prestamo prestamo = biblioteca.devolverLibro(isbn);
+    private void devolverLibro() {
+        String isbn = vista.getISBNLibro();
+        Prestamo prestamo = biblioteca.devolverLibro(isbn);
 
-    if (prestamo != null) {
-        vista.mostrarMensaje("Libro devuelto exitosamente.");
+        if (prestamo != null) {
+            vista.mostrarMensaje("Libro devuelto exitosamente.");
 
-        if (prestamo.diasDeRetraso() > 0) {
-            Multa multa = multaDao.findAll().stream()
-                .filter(m -> m.getLibro().equals(prestamo.getLibro()) &&
-                             m.getUsuario().equals(prestamo.getUsuario()) &&
-                             !m.isPagada())
-                .findFirst().orElse(null);
+            int diasRetraso = vista.getDiasRetraso();
 
-            if (multa != null)
-                vista.mostrarMensaje("Se generó una multa:\n" + multa);
+            if (diasRetraso > 0) {
+                gestorMultas.registrarMultaManual(prestamo, diasRetraso);
+
+                // Mostrar la multa recién creada
+                List<Multa> multas = gestorMultas.obtenerMultas(usuarioActual);
+                Multa multa = multas.stream()
+                        .filter(m -> m.getLibro().equals(prestamo.getLibro()) && m.getDiasRetraso() == diasRetraso
+                                && !m.isPagada())
+                        .findFirst().orElse(null);
+
+                if (multa != null) {
+                    vista.mostrarMensaje("Se generó una multa:\n" + multa);
+                }
+            } else {
+                vista.mostrarMensaje("No hubo retraso. No se generó multa.");
+            }
+
+            vista.actualizarListaLibros(biblioteca.obtenerCatalogo());
         } else {
-            vista.mostrarMensaje("No hubo retraso. No se generó multa.");
+            vista.mostrarMensaje("No se encontró préstamo asociado a ese ISBN.");
         }
-
-        vista.actualizarListaLibros(biblioteca.obtenerCatalogo());
-    } else {
-        vista.mostrarMensaje("No se encontró préstamo asociado a ese ISBN.");
     }
-}
 
     private void actualizarUsuario() {
         if (usuarioActual != null) {
@@ -189,12 +197,16 @@ public class ControladorBiblioteca {
     }
 
     private void mostrarMultas() {
-        List<Multa> multas = multaDao.findAll();
+        if (usuarioActual == null) {
+            vista.mostrarMensaje("Debe iniciar sesión primero.");
+            return;
+        }
+        List<Multa> multas = gestorMultas.obtenerMultas(usuarioActual);
 
         if (multas.isEmpty()) {
-            vista.mostrarMensaje("No hay multas registradas.");
+            vista.mostrarMensaje("No tiene multas registradas.");
         } else {
-            StringBuilder sb = new StringBuilder("Historial de Multas:\n");
+            StringBuilder sb = new StringBuilder("Sus Multas:\n");
             for (Multa multa : multas) {
                 sb.append(multa).append("\n");
             }
