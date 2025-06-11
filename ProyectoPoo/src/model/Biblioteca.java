@@ -25,12 +25,12 @@ public class Biblioteca {
 
     public void agregarLibro(String titulo, String autor, String isbn, String categoria, String ubicacion,
             String formato) {
-        if (libroDAO.findByIsbn(isbn) == null) {
+            if (libroDAO.findByIsbn(isbn) == null) {
             Libro libro;
             switch (formato.toLowerCase()) {
                 case "ebook", "audiolibro" ->
                     libro = new LibroEspecializado(titulo, isbn, autor, categoria, ubicacion, formato);
-                default -> libro = new LibroFisico(titulo, isbn, autor, categoria, ubicacion);
+                default -> libro = new LibroFisico(titulo, isbn, autor, categoria, ubicacion, formato);
             }
             libroDAO.save(libro);
         }
@@ -64,7 +64,7 @@ public class Biblioteca {
                 if (p.estaAtrasado()) {
                     int dias = p.diasDeRetraso();
                     double monto = p.getUsuario().calcularMulta(dias);
-                    Multa multa = new Multa(p.getUsuario(), p.getLibro(),dias, monto);
+                    Multa multa = new Multa(p.getUsuario(), p.getLibro(), dias, monto);
                     multaDAO.save(multa);
                 }
 
@@ -116,8 +116,8 @@ public class Biblioteca {
         return usuario.calcularMulta(diasRetraso);
     }
 
-    public Multa registrarMulta(Usuario usuario, Libro libro, int diasRetraso) {
-        Multa multa = new Multa(usuario, libro, diasRetraso);
+    public Multa registrarMulta(Usuario usuario, Libro libro, int diasRetraso, double monto) {
+        Multa multa = new Multa(usuario, libro, diasRetraso, monto);
         multaDAO.save(multa);
         return multa;
     }

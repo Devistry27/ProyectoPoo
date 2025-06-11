@@ -11,12 +11,12 @@ public abstract class Libro extends Material {
     protected String formato; // "Físico", "eBook", "Audiolibro"
 
     public Libro(String titulo, String isbn, String autor, String categoria, String ubicacionFisica, String formato) {
-        super(titulo, isbn);
+        super(titulo, isbn); // Si Material tiene este constructor
         this.isbn = (isbn != null) ? isbn : "Sin ISBN";
         this.autor = (autor != null) ? autor : "Sin autor";
         this.categoria = (categoria != null) ? categoria : "Sin categoría";
         this.ubicacionFisica = (ubicacionFisica != null) ? ubicacionFisica : "Sin ubicación";
-        this.formato = (formato != null) ? formato : "Físico";
+        this.formato = (formato != null) ? formato : "Sin formato";
         this.disponible = true;
     }
 
@@ -68,4 +68,4 @@ public abstract class Libro extends Material {
     }
 
     public abstract void mostrarInfo();
-} 
+}

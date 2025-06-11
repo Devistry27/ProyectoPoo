@@ -13,6 +13,14 @@ public class Profesor extends Usuario {
         return diasRetraso * 50;
     }
 
+    public String getDepartamento() {
+        return departamento;
+    }
+
+    public void setDepartamento(String departamento) {
+        this.departamento = departamento;
+    }
+
     public int obtenerLimitePrestamo() {
         return 10;
     }

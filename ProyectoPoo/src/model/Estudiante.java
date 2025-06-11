@@ -24,4 +24,12 @@ public class Estudiante extends Usuario {
         super.mostrarDatos();
         System.out.println("Carrera: " + carrera);
     }
+
+    public String getCarrera() {
+        return carrera;
+    }
+
+    public void setCarrera(String carrera) {
+        this.carrera = carrera;
+    }
 }
