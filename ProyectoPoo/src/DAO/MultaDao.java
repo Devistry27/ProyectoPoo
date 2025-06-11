@@ -13,9 +13,15 @@ public class MultaDao {
         tabla.put(multa.getId(), multa);
     }
 
-    /** Busca por ID (String) */
-    public Multa findById(String id) {
-        return tabla.get(id);
+    /** Busca todas las multas de un usuario */
+    public List<Multa> findByUsuario(model.Usuario usuario) {
+        List<Multa> resultado = new ArrayList<>();
+        for (Multa multa : tabla.values()) {
+            if (multa.getUsuario().equals(usuario)) {
+                resultado.add(multa);
+            }
+        }
+        return resultado;
     }
 
     /** Devuelve todas las multas */

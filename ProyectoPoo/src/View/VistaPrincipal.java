@@ -4,7 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 
 public class VistaPrincipal extends JFrame {
-    private JTextField campoNombreUsuario, campoCorreoUsuario, campoClaveUsuario, campoIdMulta;
+    private JTextField campoNombreUsuario, campoCorreoUsuario, campoClaveUsuario;
     private JComboBox<String> comboBoxRol;
     private JTextField campoCarreraDepartamento;
     private JButton btnRegistrarUsuario, btnIniciarSesion;
@@ -57,7 +57,6 @@ public class VistaPrincipal extends JFrame {
         btnRenovarPrestamo = new JButton("Renovar Préstamo"); panelMultas.add(btnRenovarPrestamo);
         btnVerHistorial = new JButton("Ver Historial" ); panelMultas.add(btnVerHistorial);
         btnVerMultas = new JButton("Ver Multas" ); panelMultas.add(btnVerMultas);
-        panelMultas.add(new JLabel("ID Multa a pagar:")); campoIdMulta = new JTextField(); panelMultas.add(campoIdMulta);
         btnPagarMulta = new JButton("Pagar Multa"); panelMultas.add(btnPagarMulta);
 
         // Área de mensajes en panel fijo
@@ -98,12 +97,6 @@ public class VistaPrincipal extends JFrame {
             return 0;
         }
     }
-
-    public String getIdMultaSeleccionada() {
-        return campoIdMulta.getText().trim();
-    }
-    
-
 
     public JButton getBtnRegistrarUsuario() { return btnRegistrarUsuario; }
     public JButton getBtnIniciarSesion() { return btnIniciarSesion; }

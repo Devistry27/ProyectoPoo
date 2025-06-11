@@ -52,7 +52,7 @@ public class Prestamo {
     }
 
     public void renovar() {
-        this.fechaDevolucion = fechaDevolucion.plusDays(7);
+        this.fechaDevolucion = fechaDevolucion.plusDays(5);
     }
 
     @Override

@@ -2,15 +2,17 @@ package Controller;
 
 import model.*;
 import View.VistaPrincipal;
+import DAO.MultaDao;
+import DAO.PrestamoDao;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.List;
 
 public class ControladorBiblioteca {
 
     private final VistaPrincipal vista;
     private final Biblioteca biblioteca;
+    private final MultaDao multaDao = new MultaDao();
+    private final PrestamoDao prestamoDao = new PrestamoDao();
     private Usuario usuarioActual;
 
     public ControladorBiblioteca(VistaPrincipal vista) {
@@ -31,8 +33,8 @@ public class ControladorBiblioteca {
         vista.getBtnCalcularMulta().addActionListener(e -> calcularMulta());
         vista.getBtnRenovarPrestamo().addActionListener(e -> renovarPrestamo());
         vista.getBtnVerHistorial().addActionListener(e -> mostrarHistorial());
-        vista.getBtnVerMultas().addActionListener(e -> mostrarMultas());
         vista.getBtnPagarMulta().addActionListener(e -> pagarMulta());
+        vista.getBtnVerMultas().addActionListener(e -> mostrarMultas());
     }
 
     private void registrarUsuario() {
@@ -78,6 +80,7 @@ public class ControladorBiblioteca {
             String categoria = vista.getCategoriaLibro();
             String ubicacion = vista.getUbicacionFisicaLibro();
             String formato = vista.getFormatoLibro();
+
             biblioteca.agregarLibro(titulo, autor, isbn, categoria, ubicacion, formato);
             vista.mostrarMensaje("Libro agregado correctamente.");
             vista.actualizarListaLibros(biblioteca.obtenerCatalogo());
@@ -88,11 +91,20 @@ public class ControladorBiblioteca {
 
     private void prestarLibro() {
         if (usuarioActual != null) {
+            // Bloqueo por multas pendientes
+            List<Multa> multasPendientes = multaDao.findByUsuario(usuarioActual);
+            boolean tienePendientes = multasPendientes.stream().anyMatch(m -> !m.isPagada());
+
+            if (tienePendientes) {
+                vista.mostrarMensaje("No puede realizar préstamos hasta pagar sus multas pendientes.");
+                return;
+            }
+
             String isbn = vista.getISBNLibro();
             if (biblioteca.prestarLibro(isbn, usuarioActual)) {
                 vista.mostrarMensaje("Libro prestado correctamente.");
             } else {
-                vista.mostrarMensaje("No se puede prestar el libro. Verifique disponibilidad o multas.");
+                vista.mostrarMensaje("No se puede prestar el libro. Verifique disponibilidad.");
             }
             vista.actualizarListaLibros(biblioteca.obtenerCatalogo());
         } else {
@@ -100,15 +112,31 @@ public class ControladorBiblioteca {
         }
     }
 
-    private void devolverLibro() {
-        String isbn = vista.getISBNLibro();
-        if (biblioteca.devolverLibro(isbn)) {
-            vista.mostrarMensaje("Libro devuelto. Verifique si se ha generado alguna multa.");
-            vista.actualizarListaLibros(biblioteca.obtenerCatalogo());
+   private void devolverLibro() {
+    String isbn = vista.getISBNLibro();
+    Prestamo prestamo = biblioteca.devolverLibro(isbn);
+
+    if (prestamo != null) {
+        vista.mostrarMensaje("Libro devuelto exitosamente.");
+
+        if (prestamo.diasDeRetraso() > 0) {
+            Multa multa = multaDao.findAll().stream()
+                .filter(m -> m.getLibro().equals(prestamo.getLibro()) &&
+                             m.getUsuario().equals(prestamo.getUsuario()) &&
+                             !m.isPagada())
+                .findFirst().orElse(null);
+
+            if (multa != null)
+                vista.mostrarMensaje("Se generó una multa:\n" + multa);
         } else {
-            vista.mostrarMensaje("No se pudo devolver el libro.");
+            vista.mostrarMensaje("No hubo retraso. No se generó multa.");
         }
+
+        vista.actualizarListaLibros(biblioteca.obtenerCatalogo());
+    } else {
+        vista.mostrarMensaje("No se encontró préstamo asociado a ese ISBN.");
     }
+}
 
     private void actualizarUsuario() {
         if (usuarioActual != null) {
@@ -161,18 +189,16 @@ public class ControladorBiblioteca {
     }
 
     private void mostrarMultas() {
-        if (usuarioActual != null) {
-            List<Multa> multas = biblioteca.multasUsuario(usuarioActual);
-            if (multas.isEmpty()) {
-                vista.mostrarMensaje("No tiene multas.");
-            } else {
-                vista.mostrarMensaje("Multas del usuario:");
-                for (Multa m : multas) {
-                    vista.mostrarMensaje(m.toString());
-                }
-            }
+        List<Multa> multas = multaDao.findAll();
+
+        if (multas.isEmpty()) {
+            vista.mostrarMensaje("No hay multas registradas.");
         } else {
-            vista.mostrarMensaje("Debe iniciar sesión primero.");
+            StringBuilder sb = new StringBuilder("Historial de Multas:\n");
+            for (Multa multa : multas) {
+                sb.append(multa).append("\n");
+            }
+            vista.mostrarMensaje(sb.toString());
         }
     }
 
@@ -181,18 +207,16 @@ public class ControladorBiblioteca {
             vista.mostrarMensaje("Debe iniciar sesión primero.");
             return;
         }
-    
-        String id = vista.getIdMultaSeleccionada();
-        if (id == null || id.isBlank()) {
-            vista.mostrarMensaje("Debe seleccionar una multa válida.");
-            return;
+
+        List<Multa> multas = multaDao.findByUsuario(usuarioActual);
+        for (Multa multa : multas) {
+            if (!multa.isPagada()) {
+                multa.setPagada(true);
+                vista.mostrarMensaje("Multa pagada:\n" + multa);
+                return;
+            }
         }
-    
-        boolean exito = biblioteca.pagarMulta(id);
-        if (exito) {
-            vista.mostrarMensaje("Multa con ID " + id + " pagada correctamente.");
-        } else {
-            vista.mostrarMensaje("No se pudo pagar la multa. ¿ID inválido o ya estaba pagada?");
-        }
+
+        vista.mostrarMensaje("No tiene multas pendientes por pagar.");
     }
-}    
+}

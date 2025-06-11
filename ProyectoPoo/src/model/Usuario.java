@@ -69,7 +69,15 @@ public abstract class Usuario {
         System.out.println("Nombre: " + nombre + ", Correo: " + correo + ", Rol: " + rol);
     }
         // Métodos abstractos que deben implementar las subclases
-    public abstract double calcularMulta(int diasRetraso);
+    public double calcularMulta(int diasRetraso) {
+    double tarifa = switch (this.getRol().toLowerCase()) {
+        case "estudiante" -> 0.5;
+        case "profesor" -> 0.3;
+        case "bibliotecario" -> 0.1;
+        default -> 1.0;
+    };
+    return diasRetraso * tarifa;
+}
 
     public abstract int obtenerLimitePrestamo();
 }

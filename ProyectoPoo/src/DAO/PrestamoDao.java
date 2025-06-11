@@ -14,13 +14,19 @@ public class PrestamoDao {
             var field = Prestamo.class.getDeclaredField("id");
             field.setAccessible(true);
             field.setInt(prestamo, nextId);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         tabla.put(nextId, prestamo);
         nextId++;
     }
 
-    public Prestamo findById(int id) {
-        return tabla.get(id);
+    public Prestamo buscarPrestamoPorISBN(String isbn) {
+        for (Prestamo prestamo : tabla.values()) {
+            if (prestamo.getLibro().getIsbn().equals(isbn)) {
+                return prestamo;
+            }
+        }
+        return null;
     }
 
     public List<Prestamo> findAll() {

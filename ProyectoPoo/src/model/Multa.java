@@ -56,4 +56,8 @@ public class Multa {
                " | Monto: $" + monto +
                " | Estado: " + (pagada ? "Pagada" : "Pendiente");
     }
+
+    public void setPagada(boolean pagada) {
+        this.pagada = pagada;
+    }
 }
